@@ -1,36 +1,54 @@
-const tripsEndpoint = 'http://localhost:3000/api/trips';
-const options = {
-  method: 'GET',
-  headers: {
-    'Accept': 'application/json'
-  }
+const request = require('request');
+const apiOptions = {
+    server: 'http://localhost:3000'
 }
 
-// var fs = require('fs');
-// var trips = JSON.parse(fs.readFileSync('./data/trips.json','utf8'));
+// Render travel list view
+const renderTravelList = (req, res, responseBody) => {
+    let message = null;
+    let pageTitle = process.env.npm_package_description + ' - Travel';
 
-/* GET travel view */
-const travel = async function(req, res, next) {
-    // console.log('TRAVEL CONTROLLER BEGIN');
-    await fetch(tripsEndpoint, options)
-      .then(res => res.json())
-      .then(json => {
-        // console.log(json);
-        let message = null;
-        if(!(json instanceof Array)) {
-          message = 'API lookup error';
-          json = [];
-        } else {
-          if(!json.length){
-            message = 'No trips exist in our database!';
-          }
+    if (!(responseBody instanceof Array)) {
+        message = 'API lookup error';
+        responseBody = [];
+    } else {
+        if (!responseBody.length) {
+            message = "No trips exist in database!";
         }
-        res.render('travel', {title: 'Travlr Getaways', trips: json, message: message});
-      })
-      .catch(err => res.status(500).send(err.message));
-    // console.log('TRAVEL CONTROLLER AFTER RENDER');
-  };  
+    }
+
+    res.render('travel', {
+        title: pageTitle,
+        trips: responseBody,
+        message
+    });
+
+};
+
+
+
+// Get travel list
+const travelList = (req, res) => {
+    const path = '/api/trips';
+    const requestOptions = {
+        url: `${apiOptions.server}${path}`,
+        method: 'GET',
+        json: {},
+    };
+    console.info('>> travelController.travelList calling ' +
+        requestOptions.url);
+    
+    request(
+        requestOptions,
+        (err, {statusCode}, body) => {
+            if(err) {
+                console.error(err);
+            }
+            renderTravelList(req, res, body);
+        }
+    );
+};
 
 module.exports = {
-  travel
-};
+    travelList
+}
